@@ -18,6 +18,11 @@ ASCharacter::ASCharacter()
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
 	CameraComp->SetupAttachment(SpringArmComp);
 
+	// This can be set in blueprints very easily
+	// In the component hierarchy:
+	//		Click CharacterMovement
+	//		Scroll to the Nav Movement section
+	//		Toggle "Can Crouch" boolean under the Movement Capabilities section
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
 
 }
