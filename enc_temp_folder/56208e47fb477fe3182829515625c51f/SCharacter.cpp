@@ -83,19 +83,3 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 }
 
-// Override of GetPawnViewLocation
-// Original was giving eye height of mesh
-// We will rewrite this to return the camera component's location
-FVector ASCharacter::GetPawnViewLocation() const
-{
-	// If the camera component exists...
-	if (CameraComp)
-	{
-		// Return the component location of the camera component
-		return CameraComp->GetComponentLocation();
-	}
-
-	// If the camera comp does not exist, then we fallback to the original implementation of GetPawnViewLocation
-	return Super::GetPawnViewLocation();
-}
-
