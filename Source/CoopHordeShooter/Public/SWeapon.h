@@ -8,6 +8,7 @@
 
 class USkeletalMeshComponent;
 class UDamageType;
+class UParticleSystem;
 
 UCLASS()
 class COOPHORDESHOOTER_API ASWeapon : public AActor
@@ -32,6 +33,18 @@ protected:
 	// EditDefaultsOnly allows setup in editor but not at runtime
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		TSubclassOf<UDamageType> DamageType;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		UParticleSystem* MuzzleEffect;
+
+	// Allow designer to see the property, but not edit it
+	// We will explicitly set this in the constructor
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		FName MuzzleSocketName;
+
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		UParticleSystem* ImpactEffect;
 
 public:
 	// Called every frame

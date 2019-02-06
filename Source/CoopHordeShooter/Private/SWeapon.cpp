@@ -13,6 +13,8 @@ ASWeapon::ASWeapon()
 	SkelMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkelMeshComp"));
 	RootComponent = SkelMeshComp;
 
+	MuzzleSocketName = "MuzzleSocket";
+
 }
 
 // Called when the game starts or when spawned
@@ -66,10 +68,26 @@ void ASWeapon::Fire()
 
 			UGameplayStatics::ApplyPointDamage(HitActor, 20.0f, ShotDirection, HitResult, MyOwner->GetInstigatorController(), this, DamageType);
 
+			// If designer has set the impact effect in blueprints...
+			if (ImpactEffect)
+			{
+				// Spawn a particle effect at the impact point's location and rotation
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
+
+			}
+
 		}
 
 		// Draw a debug line to see the linetrace
 		DrawDebugLine(GetWorld(), EyeLocation, TraceEnd, FColor::White, false, 1.0f, 0, 1.0f);
+
+		if (MuzzleEffect)
+		{
+			// Since the weapon is constantly moving, we use SpawnEmitterAttached
+			// NOTE: SpawnEmitterAtLocation would not work because of this constant movement
+			UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, SkelMeshComp, MuzzleSocketName);
+		}
+
 	}
 
 
