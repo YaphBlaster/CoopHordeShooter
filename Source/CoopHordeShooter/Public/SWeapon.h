@@ -7,6 +7,7 @@
 #include "SWeapon.generated.h"
 
 class USkeletalMeshComponent;
+class UDamageType;
 
 UCLASS()
 class COOPHORDESHOOTER_API ASWeapon : public AActor
@@ -27,6 +28,10 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 		void Fire();
+
+	// EditDefaultsOnly allows setup in editor but not at runtime
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		TSubclassOf<UDamageType> DamageType;
 
 public:
 	// Called every frame
