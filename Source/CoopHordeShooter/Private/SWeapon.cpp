@@ -3,6 +3,7 @@
 #include "SWeapon.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
 
 // Sets default values
 ASWeapon::ASWeapon()
@@ -14,6 +15,7 @@ ASWeapon::ASWeapon()
 	RootComponent = SkelMeshComp;
 
 	MuzzleSocketName = "MuzzleSocket";
+	TracerTargetName = "Target";
 
 }
 
@@ -55,6 +57,9 @@ void ASWeapon::Fire()
 		// This precision helps with logic for specific hit location logic (EX. Headshots)
 		QueryParams.bTraceComplex = true;
 
+		// Particle "Target" Parameter
+		FVector TracerEndPoint = TraceEnd;
+
 		// Will fill our linetrace results in this FHitResult object
 		FHitResult HitResult;
 
@@ -73,9 +78,9 @@ void ASWeapon::Fire()
 			{
 				// Spawn a particle effect at the impact point's location and rotation
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
-
 			}
 
+			TraceEnd = HitResult.ImpactPoint;
 		}
 
 		// Draw a debug line to see the linetrace
@@ -86,6 +91,17 @@ void ASWeapon::Fire()
 			// Since the weapon is constantly moving, we use SpawnEmitterAttached
 			// NOTE: SpawnEmitterAtLocation would not work because of this constant movement
 			UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, SkelMeshComp, MuzzleSocketName);
+		}
+
+		FVector MuzzleLocation = SkelMeshComp->GetSocketLocation(MuzzleSocketName);
+
+		if (TracerEffect)
+		{
+			UParticleSystemComponent* TracerComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), TracerEffect, MuzzleLocation);
+			if (TracerComp)
+			{
+				TracerComp->SetVectorParameter(TracerTargetName, TraceEnd);
+			}
 		}
 
 	}
