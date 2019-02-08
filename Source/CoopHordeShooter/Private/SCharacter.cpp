@@ -25,6 +25,12 @@ ASCharacter::ASCharacter()
 	//		Toggle "Can Crouch" boolean under the Movement Capabilities section
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;
 
+	// Set default Zoom Field of View
+	ZoomFOV = 65.0f;
+
+	// Set default Zoom interpolation speed
+	ZoomInterpSpeed = 20.0f;
+
 }
 
 // Called when the game starts or when spawned
@@ -32,6 +38,7 @@ void ASCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	DefaultFOV = CameraComp->FieldOfView;
 }
 
 void ASCharacter::MoveForward(float Value)
@@ -54,10 +61,35 @@ void ASCharacter::EndCrouch()
 	UnCrouch();
 }
 
+void ASCharacter::BeginZoom()
+{
+	bWantsToZoom = true;
+}
+
+void ASCharacter::EndZoom()
+{
+	bWantsToZoom = false;
+}
+
 // Called every frame
 void ASCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// TERNARY OPERATOR
+	// IF the zoom button is pressed (bWantsToZoom = TRUE)...
+	// Set the TargetFOV to the ZoomFOV
+	// ELSE ...
+	// Set the TargetFOV to the DefaultFOV
+	float TargetFOV = bWantsToZoom ? ZoomFOV : DefaultFOV;
+
+	// set the new field of view to the interpolation of the current field of view TOWARDS the target field of view
+	// with the passage of time mapping to DeltaTime
+	// with a speed of the set ZoomInterpSpeed
+	float NewFOV = FMath::FInterpTo(CameraComp->FieldOfView, TargetFOV, DeltaTime, ZoomInterpSpeed);
+
+	// set the current field of view to the new field of view
+	CameraComp->SetFieldOfView(NewFOV);
 
 }
 
@@ -72,14 +104,18 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	// Binding Axis inputs and setting them to look up and turn
 	// Since this is inherited from the Character class, we can directly hook in to ACharacter instead of ASCharacter
-	PlayerInputComponent->BindAxis("LookUp", this, &ACharacter::AddControllerPitchInput);
-	PlayerInputComponent->BindAxis("Turn", this, &ACharacter::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("LookUp", this, &ASCharacter::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("Turn", this, &ASCharacter::AddControllerYawInput);
 
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ASCharacter::BeginCrouch);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ASCharacter::EndCrouch);
 
 	// Since this is inherited from the Character class, we can directly hook in to ACharacter instead of ASCharacter
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASCharacter::Jump);
+
+	// Binding Action inputs for zoom functionality
+	PlayerInputComponent->BindAction("Zoom", IE_Pressed, this, &ASCharacter::BeginZoom);
+	PlayerInputComponent->BindAction("Zoom", IE_Released, this, &ASCharacter::EndZoom);
 
 }
 

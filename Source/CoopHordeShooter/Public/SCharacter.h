@@ -36,6 +36,26 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		USpringArmComponent* SpringArmComp;
 
+	// You do not need to create pointers for primitive types
+
+	bool bWantsToZoom;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Player")
+		float ZoomFOV;
+
+
+	// meta allows us to set up restrictions for our properties in blueprints
+	// In this case the ZoomInterpSpeed has to be between 0.1 and 100 
+	UPROPERTY(EditDefaultsOnly, Category = "Player", meta = (ClampMin = 0.1, ClampMax = 100))
+		float ZoomInterpSpeed;
+
+	/* Default FOV set during begin play*/
+	float DefaultFOV;
+
+	void BeginZoom();
+
+	void EndZoom();
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
