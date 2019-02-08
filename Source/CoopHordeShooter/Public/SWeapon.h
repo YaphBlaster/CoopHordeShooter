@@ -27,12 +27,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		USkeletalMeshComponent* SkelMeshComp;
 
+	// Virtual keyword needs to be added in order to override the function in derived classes
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
-		void Fire();
-
-	// EditDefaultsOnly allows setup in editor but not at runtime
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
-		TSubclassOf<UDamageType> DamageType;
+		virtual void Fire();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		UParticleSystem* MuzzleEffect;
@@ -51,7 +48,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		UParticleSystem* TracerEffect;
 
+
+
 public:
+
+	// EditDefaultsOnly allows setup in editor but not at runtime
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		TSubclassOf<UDamageType> DamageType;
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
