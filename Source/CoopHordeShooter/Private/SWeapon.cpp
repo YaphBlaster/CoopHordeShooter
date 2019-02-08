@@ -5,6 +5,22 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 
+// Sets the DebugWeaponDrawing value
+// FALSE = 0
+// TRUE = 1
+static int32 DebugWeaponDrawing = 0;
+
+// Console Variable
+FAutoConsoleVariableRef CVARDebugWeaponDrawing(
+	TEXT("COOP.DebugWeapons"),
+	DebugWeaponDrawing,
+	TEXT("Draw Debug Lines for Weapons")
+	TEXT("0 = off\n")
+	TEXT("1 = visualize weapon fire lines\n"),
+	ECVF_Cheat
+);
+
+
 // Sets default values
 ASWeapon::ASWeapon()
 {
@@ -83,8 +99,12 @@ void ASWeapon::Fire()
 			TraceEnd = HitResult.ImpactPoint;
 		}
 
-		// Draw a debug line to see the linetrace
-		DrawDebugLine(GetWorld(), EyeLocation, TraceEnd, FColor::White, false, 1.0f, 0, 1.0f);
+		if (DebugWeaponDrawing > 0)
+		{
+			// Draw a debug line to see the linetrace
+			DrawDebugLine(GetWorld(), EyeLocation, TraceEnd, FColor::White, false, 1.0f, 0, 1.0f);
+		}
+
 
 		if (MuzzleEffect)
 		{

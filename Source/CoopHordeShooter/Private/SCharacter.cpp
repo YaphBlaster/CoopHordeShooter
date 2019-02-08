@@ -11,11 +11,17 @@ ASCharacter::ASCharacter()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Create the spring arm component
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComp"));
+	// Set the spring arm to rotate in tandem with the pawn's rotation
+	// NOTE: this can be set in blueprints under "Camera Settings"
 	SpringArmComp->bUsePawnControlRotation = true;
+	// Attach the spring arm to be a child of the root component
 	SpringArmComp->SetupAttachment(RootComponent);
 
+	// Create the third person camera
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
+	// Attach the camera to be a child of the spring arm
 	CameraComp->SetupAttachment(SpringArmComp);
 
 	// This can be set in blueprints very easily
