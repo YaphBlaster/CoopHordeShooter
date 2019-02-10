@@ -20,16 +20,10 @@ public:
 	ASWeapon();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
 	// Skeletal meshes are used for meshes that need animation while Static Meshes do not use animations
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		USkeletalMeshComponent* SkelMeshComp;
 
-	// Virtual keyword needs to be added in order to override the function in derived classes
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-		virtual void Fire();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		UParticleSystem* MuzzleEffect;
@@ -48,6 +42,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		UParticleSystem* TracerEffect;
 
+	void PlayFireEffects(FVector TraceEnd);
 
 
 public:
@@ -56,7 +51,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		TSubclassOf<UDamageType> DamageType;
 
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	// Virtual keyword needs to be added in order to override the function in derived classes
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+		virtual void Fire();
 
 };

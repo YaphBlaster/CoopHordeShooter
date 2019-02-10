@@ -24,21 +24,11 @@ FAutoConsoleVariableRef CVARDebugWeaponDrawing(
 // Sets default values
 ASWeapon::ASWeapon()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
 	SkelMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkelMeshComp"));
 	RootComponent = SkelMeshComp;
 
 	MuzzleSocketName = "MuzzleSocket";
 	TracerTargetName = "Target";
-
-}
-
-// Called when the game starts or when spawned
-void ASWeapon::BeginPlay()
-{
-	Super::BeginPlay();
 
 }
 
@@ -96,7 +86,7 @@ void ASWeapon::Fire()
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
 			}
 
-			TraceEnd = HitResult.ImpactPoint;
+			TracerEndPoint = HitResult.ImpactPoint;
 		}
 
 		if (DebugWeaponDrawing > 0)
@@ -105,34 +95,31 @@ void ASWeapon::Fire()
 			DrawDebugLine(GetWorld(), EyeLocation, TraceEnd, FColor::White, false, 1.0f, 0, 1.0f);
 		}
 
-
-		if (MuzzleEffect)
-		{
-			// Since the weapon is constantly moving, we use SpawnEmitterAttached
-			// NOTE: SpawnEmitterAtLocation would not work because of this constant movement
-			UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, SkelMeshComp, MuzzleSocketName);
-		}
-
-		FVector MuzzleLocation = SkelMeshComp->GetSocketLocation(MuzzleSocketName);
-
-		if (TracerEffect)
-		{
-			UParticleSystemComponent* TracerComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), TracerEffect, MuzzleLocation);
-			if (TracerComp)
-			{
-				TracerComp->SetVectorParameter(TracerTargetName, TraceEnd);
-			}
-		}
+		PlayFireEffects(TracerEndPoint);
 
 	}
 
 
 }
 
-// Called every frame
-void ASWeapon::Tick(float DeltaTime)
+void ASWeapon::PlayFireEffects(FVector TraceEnd)
 {
-	Super::Tick(DeltaTime);
 
+	if (MuzzleEffect)
+	{
+		// Since the weapon is constantly moving, we use SpawnEmitterAttached
+		// NOTE: SpawnEmitterAtLocation would not work because of this constant movement
+		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, SkelMeshComp, MuzzleSocketName);
+	}
+
+	FVector MuzzleLocation = SkelMeshComp->GetSocketLocation(MuzzleSocketName);
+
+	if (TracerEffect)
+	{
+		UParticleSystemComponent* TracerComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), TracerEffect, MuzzleLocation);
+		if (TracerComp)
+		{
+			TracerComp->SetVectorParameter(TracerTargetName, TraceEnd);
+		}
+	}
 }
-

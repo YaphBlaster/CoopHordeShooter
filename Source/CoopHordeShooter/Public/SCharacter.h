@@ -8,6 +8,7 @@
 
 class UCameraComponent;
 class USpringArmComponent;
+class ASWeapon;
 
 UCLASS()
 class COOPHORDESHOOTER_API ASCharacter : public ACharacter
@@ -55,6 +56,17 @@ protected:
 	void BeginZoom();
 
 	void EndZoom();
+
+	ASWeapon* CurrentWeapon;
+
+	void Fire();
+
+	// Weapon that the character will start with
+	UPROPERTY(EditDefaultsOnly, Category = "Player")
+		TSubclassOf<ASWeapon> StarterWeaponClass;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = "Player")
+		FName WeaponAttachSocketName;
 
 public:
 	// Called every frame
