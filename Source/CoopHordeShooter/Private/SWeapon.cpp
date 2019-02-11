@@ -74,7 +74,7 @@ void ASWeapon::Fire()
 
 		// Line traces return a boolean (hit or not hit)
 		// Therefore we check to see if the boolean is true (something was hit)
-		if (GetWorld()->LineTraceSingleByChannel(HitResult, EyeLocation, TraceEnd, ECC_Visibility, QueryParams))
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, EyeLocation, TraceEnd, COLLISION_WEAPON, QueryParams))
 		{
 			// Blocking hit! Process damage
 
@@ -88,7 +88,9 @@ void ASWeapon::Fire()
 			// Allows the system to delete it if it's not being used
 			EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 
+			// Create an temporary value
 			UParticleSystem* SelectedEffect = nullptr;
+
 			switch (SurfaceType)
 			{
 
