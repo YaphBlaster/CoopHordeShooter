@@ -5,6 +5,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Public/SWeapon.h"
+#include "CoopHordeShooter.h"
+#include "Components/CapsuleComponent.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -19,6 +21,8 @@ ASCharacter::ASCharacter()
 	SpringArmComp->bUsePawnControlRotation = true;
 	// Attach the spring arm to be a child of the root component
 	SpringArmComp->SetupAttachment(RootComponent);
+
+	GetCapsuleComponent()->SetCollisionResponseToChannel(COLLISION_WEAPON, ECR_Ignore);
 
 	// Create the third person camera
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
