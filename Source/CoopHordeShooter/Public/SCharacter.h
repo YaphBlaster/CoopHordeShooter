@@ -38,12 +38,10 @@ protected:
 		USpringArmComponent* SpringArmComp;
 
 	// You do not need to create pointers for primitive types
-
 	bool bWantsToZoom;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Player")
 		float ZoomFOV;
-
 
 	// meta allows us to set up restrictions for our properties in blueprints
 	// In this case the ZoomInterpSpeed has to be between 0.1 and 100 
@@ -59,10 +57,12 @@ protected:
 
 	ASWeapon* CurrentWeapon;
 
-	void Fire();
+	void StartFire();
+
+	void StopFire();
 
 	// Weapon that the character will start with
-	UPROPERTY(EditDefaultsOnly, Category = "Player")
+	UPROPERTY(EditAnywhere, Category = "Player")
 		TSubclassOf<ASWeapon> StarterWeaponClass;
 
 	UPROPERTY(VisibleDefaultsOnly, Category = "Player")

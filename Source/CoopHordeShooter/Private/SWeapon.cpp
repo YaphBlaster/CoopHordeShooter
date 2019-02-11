@@ -6,6 +6,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "CoopHordeShooter.h"
+#include "TimerManager.h"
 
 // Sets the DebugWeaponDrawing value
 // FALSE = 0
@@ -32,7 +33,22 @@ ASWeapon::ASWeapon()
 	MuzzleSocketName = "MuzzleSocket";
 	TracerTargetName = "Target";
 
+	BaseDamage = 20.0f;
+
+	RateOfFire = 600;
+
 }
+
+void ASWeapon::BeginPlay()
+{
+	Super::BeginPlay();
+
+	TimeBetweenShots = 60 / RateOfFire;
+
+	LastFireTime = -TimeBetweenShots;
+
+}
+
 
 void ASWeapon::Fire()
 {
@@ -74,34 +90,47 @@ void ASWeapon::Fire()
 
 		// Line traces return a boolean (hit or not hit)
 		// Therefore we check to see if the boolean is true (something was hit)
+		// COLLISION_WEAPON is an global variable that we added in the CoopHordeShooter.h file
+		// It equates to ECC_GameTraceChannel1, which can be set in the Editor (Collision - Add Trace Channel)
 		if (GetWorld()->LineTraceSingleByChannel(HitResult, EyeLocation, TraceEnd, COLLISION_WEAPON, QueryParams))
 		{
 			// Blocking hit! Process damage
 
+			// Get the actor that was hit
 			AActor* HitActor = HitResult.GetActor();
-
-			UGameplayStatics::ApplyPointDamage(HitActor, 20.0f, ShotDirection, HitResult, MyOwner->GetInstigatorController(), this, DamageType);
-
 
 
 			// Weak object pointer
 			// Allows the system to delete it if it's not being used
 			EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 
+			// Retrieve damage amount
+			float ActualDamage = BaseDamage;
+
+			// Check if the surface type that was hit was a vulnerable area (EX: Headshot)
+			if (SurfaceType == SURFACE_FLESHVULNERABLE)
+			{
+				// Multiply the damage amount for damage bonus
+				ActualDamage *= 4.0f;
+			}
+
+			// Apply point damage
+			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, HitResult, MyOwner->GetInstigatorController(), this, DamageType);
+
 			// Create an temporary value
 			UParticleSystem* SelectedEffect = nullptr;
 
 			switch (SurfaceType)
 			{
-
+				// Global Vars set in the CoopHordeShooter.h file
+				// If FleshDefault or FleshVulnerable, set the effect to the flesh impact effect
 			case SURFACE_FLESHDEFAULT:
 			case SURFACE_FLESHVULNERABLE:
 				SelectedEffect = FleshImpactEffect;
-
 				break;
+				// If no specified surface was hit, apply the default impact effect
 			default:
 				SelectedEffect = DefaultImpactEffect;
-
 				break;
 			}
 
@@ -112,9 +141,14 @@ void ASWeapon::Fire()
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
 			}
 
+			// Set the TracerEndpoint to be where the hitresult's impact point was
 			TracerEndPoint = HitResult.ImpactPoint;
 		}
 
+		// Console commands can be accessed by hitting the tilde "~" key
+		// The following variable is attached to this command "COOP.DebugWeapons"
+		// Initialization can be found on line 15
+		// If the console variable is greater than 0, ...
 		if (DebugWeaponDrawing > 0)
 		{
 			// Draw a debug line to see the linetrace
@@ -123,9 +157,27 @@ void ASWeapon::Fire()
 
 		PlayFireEffects(TracerEndPoint);
 
+		// Keep track of the time when the shot was fired
+		// Used to not allow the player to spam the fire button
+		LastFireTime = GetWorld()->TimeSeconds;
 	}
 
 
+}
+
+void ASWeapon::StartFire()
+{
+	// FMath::Max
+	// Forces to choose the max value of the two arguments given
+	float FirstDelay = FMath::Max(LastFireTime + TimeBetweenShots - GetWorld()->TimeSeconds, 0.0f);
+	GetWorldTimerManager().SetTimer(TimerHandle_TimeBetweenShots, this, &ASWeapon::Fire, TimeBetweenShots, true, FirstDelay);
+
+
+}
+
+void ASWeapon::StopFire()
+{
+	GetWorldTimerManager().ClearTimer(TimerHandle_TimeBetweenShots);
 }
 
 void ASWeapon::PlayFireEffects(FVector TraceEnd)

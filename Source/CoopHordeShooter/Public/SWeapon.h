@@ -21,6 +21,9 @@ public:
 	ASWeapon();
 
 protected:
+
+	virtual void BeginPlay() override;
+
 	// Skeletal meshes are used for meshes that need animation while Static Meshes do not use animations
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		USkeletalMeshComponent* SkelMeshComp;
@@ -50,6 +53,22 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 		TSubclassOf<UCameraShake> FireCamShake;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+		float BaseDamage;
+
+	// Virtual keyword needs to be added in order to override the function in derived classes
+	virtual void Fire();
+
+	FTimerHandle TimerHandle_TimeBetweenShots;
+
+	float LastFireTime;
+
+	/* RPM - Bullets per minute fired by weapon */
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+		float RateOfFire;
+
+	// Derived from RateOfFire
+	float TimeBetweenShots;
 
 public:
 
@@ -57,8 +76,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		TSubclassOf<UDamageType> DamageType;
 
-	// Virtual keyword needs to be added in order to override the function in derived classes
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-		virtual void Fire();
+
+	void StartFire();
+
+	void StopFire();
 
 };
