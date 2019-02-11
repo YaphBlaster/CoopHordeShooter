@@ -145,7 +145,7 @@ void ASCharacter::Tick(float DeltaTime)
 	// IF the zoom button is pressed (bWantsToZoom = TRUE)...
 	// Set the TargetFOV to the ZoomFOV
 	// ELSE ...
-	// Set the TargetFOV to the DefaultFOV
+	// Set the TargetFOV to the DefaultFOVF
 	float TargetFOV = bWantsToZoom ? ZoomFOV : DefaultFOV;
 
 	// set the new field of view to the interpolation of the current field of view TOWARDS the target field of view
