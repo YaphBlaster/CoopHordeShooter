@@ -9,6 +9,7 @@
 class USkeletalMeshComponent;
 class UDamageType;
 class UParticleSystem;
+class UCameraShake;
 
 UCLASS()
 class COOPHORDESHOOTER_API ASWeapon : public AActor
@@ -24,6 +25,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		USkeletalMeshComponent* SkelMeshComp;
 
+	void PlayFireEffects(FVector TraceEnd);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		UParticleSystem* MuzzleEffect;
@@ -37,12 +39,16 @@ protected:
 		FName TracerTargetName;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
-		UParticleSystem* ImpactEffect;
+		UParticleSystem* DefaultImpactEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		UParticleSystem* FleshImpactEffect;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		UParticleSystem* TracerEffect;
 
-	void PlayFireEffects(FVector TraceEnd);
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+		TSubclassOf<UCameraShake> FireCamShake;
 
 
 public:

@@ -4,6 +4,8 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "CoopHordeShooter.h"
 
 // Sets the DebugWeaponDrawing value
 // FALSE = 0
@@ -62,6 +64,7 @@ void ASWeapon::Fire()
 		// More expensive but much more precise
 		// This precision helps with logic for specific hit location logic (EX. Headshots)
 		QueryParams.bTraceComplex = true;
+		QueryParams.bReturnPhysicalMaterial = true;
 
 		// Particle "Target" Parameter
 		FVector TracerEndPoint = TraceEnd;
@@ -79,11 +82,32 @@ void ASWeapon::Fire()
 
 			UGameplayStatics::ApplyPointDamage(HitActor, 20.0f, ShotDirection, HitResult, MyOwner->GetInstigatorController(), this, DamageType);
 
+
+
+			// Weak object pointer
+			// Allows the system to delete it if it's not being used
+			EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
+
+			UParticleSystem* SelectedEffect = nullptr;
+			switch (SurfaceType)
+			{
+
+			case SURFACE_FLESHDEFAULT:
+			case SURFACE_FLESHVULNERABLE:
+				SelectedEffect = FleshImpactEffect;
+
+				break;
+			default:
+				SelectedEffect = DefaultImpactEffect;
+
+				break;
+			}
+
 			// If designer has set the impact effect in blueprints...
-			if (ImpactEffect)
+			if (SelectedEffect)
 			{
 				// Spawn a particle effect at the impact point's location and rotation
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
 			}
 
 			TracerEndPoint = HitResult.ImpactPoint;
@@ -120,6 +144,18 @@ void ASWeapon::PlayFireEffects(FVector TraceEnd)
 		if (TracerComp)
 		{
 			TracerComp->SetVectorParameter(TracerTargetName, TraceEnd);
+		}
+	}
+
+	// Camera Shake
+
+	APawn* MyPawn = Cast<APawn>(GetOwner());
+	if (MyPawn)
+	{
+		APlayerController* PC = Cast<APlayerController>(MyPawn->GetController());
+		if (PC)
+		{
+			PC->ClientPlayCameraShake(FireCamShake);
 		}
 	}
 }
