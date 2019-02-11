@@ -24,6 +24,4 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
 		TSubclassOf<ASProjectile> ProjectileClass;
 
-
-
 };
