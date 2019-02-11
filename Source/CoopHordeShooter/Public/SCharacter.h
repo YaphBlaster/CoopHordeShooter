@@ -9,6 +9,7 @@
 class UCameraComponent;
 class USpringArmComponent;
 class ASWeapon;
+class USHealthComponent;
 
 UCLASS()
 class COOPHORDESHOOTER_API ASCharacter : public ACharacter
@@ -37,6 +38,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		USpringArmComponent* SpringArmComp;
 
+	USHealthComponent* HealthComp;
+
 	// You do not need to create pointers for primitive types
 	bool bWantsToZoom;
 
@@ -57,16 +60,25 @@ protected:
 
 	ASWeapon* CurrentWeapon;
 
-	void StartFire();
-
-	void StopFire();
-
 	// Weapon that the character will start with
 	UPROPERTY(EditAnywhere, Category = "Player")
 		TSubclassOf<ASWeapon> StarterWeaponClass;
 
 	UPROPERTY(VisibleDefaultsOnly, Category = "Player")
 		FName WeaponAttachSocketName;
+
+
+	void StartFire();
+
+	void StopFire();
+
+
+	UFUNCTION()
+		void OnHealthChanged(USHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
+	/*Pawn died previously*/
+	UPROPERTY(BlueprintReadOnly, Category = "Player")
+		bool bDied;
 
 public:
 	// Called every frame

@@ -7,6 +7,7 @@
 #include "Public/SWeapon.h"
 #include "CoopHordeShooter.h"
 #include "Components/CapsuleComponent.h"
+#include "Public/Components/SHealthComponent.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -44,6 +45,7 @@ ASCharacter::ASCharacter()
 
 	WeaponAttachSocketName = "WeaponSocket";
 
+	HealthComp = CreateDefaultSubobject<USHealthComponent>(TEXT("HealthComp"));
 }
 
 // Called when the game starts or when spawned
@@ -63,6 +65,9 @@ void ASCharacter::BeginPlay()
 		CurrentWeapon->SetOwner(this);
 		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocketName);
 	}
+
+	HealthComp->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
+
 }
 
 void ASCharacter::MoveForward(float Value)
@@ -93,6 +98,26 @@ void ASCharacter::BeginZoom()
 void ASCharacter::EndZoom()
 {
 	bWantsToZoom = false;
+}
+
+
+void ASCharacter::OnHealthChanged(USHealthComponent* HealthComp, float Health, float HealthDelta,
+	const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
+{
+	if (Health <= 0.0f && !bDied)
+	{
+		// Die!
+		bDied = true;
+
+		GetMovementComponent()->StopMovementImmediately();
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// Detaching from the controller allows us to disable all input that would affect the player
+		DetachFromControllerPendingDestroy();
+
+		// Set a timer for the actor to be destroyed in 10 seconds
+		SetLifeSpan(10.0f);
+	}
 }
 
 void ASCharacter::StartFire()
