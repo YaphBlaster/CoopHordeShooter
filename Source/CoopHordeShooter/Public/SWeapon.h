@@ -59,6 +59,12 @@ protected:
 	// Virtual keyword needs to be added in order to override the function in derived classes
 	virtual void Fire();
 
+	// PARAM: Server - Push all requests to the hosting server
+	// PARAM: Reliable - 100% will eventually be called
+	// PARAM - 
+	UFUNCTION(Server, Reliable, WithValidation)
+		void ServerFire();
+
 	FTimerHandle TimerHandle_TimeBetweenShots;
 
 	float LastFireTime;

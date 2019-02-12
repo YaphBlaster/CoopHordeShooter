@@ -58,6 +58,15 @@ void ASWeapon::Fire()
 {
 	// Trace the world, from pawn eyes to crosshair location (center screen)
 
+	// When the client calls Fire, their role will be less than the ROLE_AUTHORITY (Server)
+	// The second time this runs, after ServerFire is called, the Role will be ROLE_AUTHORITY (Server) and will therefore be skipped
+	if (Role < ROLE_Authority)
+	{
+		// make the request to the server to fire for the client
+		ServerFire();
+	}
+
+	// Otherwise we are the server so we fire our own weapon
 	AActor* MyOwner = GetOwner();
 	if (MyOwner)
 	{
@@ -167,6 +176,21 @@ void ASWeapon::Fire()
 	}
 
 
+}
+
+// Since this is a replicated function implementation
+// This code will only be run on the server
+void ASWeapon::ServerFire_Implementation()
+{
+	Fire();
+}
+
+// Used for anti-cheating
+// Used to validate code to see if something was wrong
+// If there was something wrong, this would automatically disconnect the client from the server
+bool ASWeapon::ServerFire_Validate()
+{
+	return true;
 }
 
 void ASWeapon::StartFire()
