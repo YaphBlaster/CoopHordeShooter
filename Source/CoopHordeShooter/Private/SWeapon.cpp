@@ -37,6 +37,10 @@ ASWeapon::ASWeapon()
 
 	RateOfFire = 600;
 
+	// This allows us to spawn the weapon on the client when the weapon is originally spawned on the server
+	// Ripples through from server to client
+	SetReplicates(true);
+
 }
 
 void ASWeapon::BeginPlay()

@@ -59,7 +59,8 @@ protected:
 
 	void EndZoom();
 
-	ASWeapon* CurrentWeapon;
+	UPROPERTY(Replicated)
+		ASWeapon* CurrentWeapon;
 
 	// Weapon that the character will start with
 	UPROPERTY(EditAnywhere, Category = "Player")
