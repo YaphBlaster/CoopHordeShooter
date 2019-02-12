@@ -5,6 +5,9 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Public/SWeapon.h"
+#include "CoopHordeShooter.h"
+#include "Components/CapsuleComponent.h"
+#include "Public/Components/SHealthComponent.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -19,6 +22,8 @@ ASCharacter::ASCharacter()
 	SpringArmComp->bUsePawnControlRotation = true;
 	// Attach the spring arm to be a child of the root component
 	SpringArmComp->SetupAttachment(RootComponent);
+
+	GetCapsuleComponent()->SetCollisionResponseToChannel(COLLISION_WEAPON, ECR_Ignore);
 
 	// Create the third person camera
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
@@ -40,6 +45,7 @@ ASCharacter::ASCharacter()
 
 	WeaponAttachSocketName = "WeaponSocket";
 
+	HealthComp = CreateDefaultSubobject<USHealthComponent>(TEXT("HealthComp"));
 }
 
 // Called when the game starts or when spawned
@@ -59,6 +65,9 @@ void ASCharacter::BeginPlay()
 		CurrentWeapon->SetOwner(this);
 		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponAttachSocketName);
 	}
+
+	HealthComp->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
+
 }
 
 void ASCharacter::MoveForward(float Value)
@@ -91,6 +100,26 @@ void ASCharacter::EndZoom()
 	bWantsToZoom = false;
 }
 
+
+void ASCharacter::OnHealthChanged(USHealthComponent* HealthComp, float Health, float HealthDelta,
+	const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
+{
+	if (Health <= 0.0f && !bDied)
+	{
+		// Die!
+		bDied = true;
+
+		GetMovementComponent()->StopMovementImmediately();
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// Detaching from the controller allows us to disable all input that would affect the player
+		DetachFromControllerPendingDestroy();
+
+		// Set a timer for the actor to be destroyed in 10 seconds
+		SetLifeSpan(10.0f);
+	}
+}
+
 void ASCharacter::StartFire()
 {
 	if (CurrentWeapon)
@@ -116,7 +145,7 @@ void ASCharacter::Tick(float DeltaTime)
 	// IF the zoom button is pressed (bWantsToZoom = TRUE)...
 	// Set the TargetFOV to the ZoomFOV
 	// ELSE ...
-	// Set the TargetFOV to the DefaultFOV
+	// Set the TargetFOV to the DefaultFOVF
 	float TargetFOV = bWantsToZoom ? ZoomFOV : DefaultFOV;
 
 	// set the new field of view to the interpolation of the current field of view TOWARDS the target field of view
