@@ -7,6 +7,7 @@
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "CoopHordeShooter.h"
 #include "TimerManager.h"
+#include "UnrealNetwork.h"
 
 // Sets the DebugWeaponDrawing value
 // FALSE = 0
@@ -40,6 +41,10 @@ ASWeapon::ASWeapon()
 	// This allows us to spawn the weapon on the client when the weapon is originally spawned on the server
 	// Ripples through from server to client
 	SetReplicates(true);
+
+	// Sets up the networks update frequency for this class
+	NetUpdateFrequency = 66.0f;
+	MinNetUpdateFrequency = 33.0f;
 
 }
 
@@ -98,6 +103,8 @@ void ASWeapon::Fire()
 		// Particle "Target" Parameter
 		FVector TracerEndPoint = TraceEnd;
 
+		EPhysicalSurface SurfaceType = SurfaceType_Default;
+
 		// Will fill our linetrace results in this FHitResult object
 		FHitResult HitResult;
 
@@ -130,32 +137,11 @@ void ASWeapon::Fire()
 			// Apply point damage
 			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, HitResult, MyOwner->GetInstigatorController(), this, DamageType);
 
-			// Create an temporary value
-			UParticleSystem* SelectedEffect = nullptr;
-
-			switch (SurfaceType)
-			{
-				// Global Vars set in the CoopHordeShooter.h file
-				// If FleshDefault or FleshVulnerable, set the effect to the flesh impact effect
-			case SURFACE_FLESHDEFAULT:
-			case SURFACE_FLESHVULNERABLE:
-				SelectedEffect = FleshImpactEffect;
-				break;
-				// If no specified surface was hit, apply the default impact effect
-			default:
-				SelectedEffect = DefaultImpactEffect;
-				break;
-			}
-
-			// If designer has set the impact effect in blueprints...
-			if (SelectedEffect)
-			{
-				// Spawn a particle effect at the impact point's location and rotation
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
-			}
-
+			PlayImpactEffect(SurfaceType, HitResult.ImpactPoint);
 			// Set the TracerEndpoint to be where the hitresult's impact point was
 			TracerEndPoint = HitResult.ImpactPoint;
+
+			HitScanTrace.SurfaceType = SurfaceType;
 		}
 
 		// Console commands can be accessed by hitting the tilde "~" key
@@ -170,11 +156,26 @@ void ASWeapon::Fire()
 
 		PlayFireEffects(TracerEndPoint);
 
+		if (Role == ROLE_Authority)
+		{
+			HitScanTrace.TraceTo = TracerEndPoint;
+			HitScanTrace.SurfaceType = SurfaceType;
+		}
+
 		// Keep track of the time when the shot was fired
 		// Used to not allow the player to spam the fire button
 		LastFireTime = GetWorld()->TimeSeconds;
 	}
 
+
+}
+
+void ASWeapon::OnRep_HitScanTrace()
+{
+	// Play cosmetic FX
+	PlayFireEffects(HitScanTrace.TraceTo);
+
+	PlayImpactEffect(HitScanTrace.SurfaceType, HitScanTrace.TraceTo);
 
 }
 
@@ -240,4 +241,48 @@ void ASWeapon::PlayFireEffects(FVector TraceEnd)
 			PC->ClientPlayCameraShake(FireCamShake);
 		}
 	}
+}
+
+void ASWeapon::PlayImpactEffect(EPhysicalSurface SurfaceType, FVector ImpactPoint)
+{
+	// Create an temporary value
+	UParticleSystem* SelectedEffect = nullptr;
+
+	switch (SurfaceType)
+	{
+		// Global Vars set in the CoopHordeShooter.h file
+		// If FleshDefault or FleshVulnerable, set the effect to the flesh impact effect
+	case SURFACE_FLESHDEFAULT:
+	case SURFACE_FLESHVULNERABLE:
+		SelectedEffect = FleshImpactEffect;
+		break;
+		// If no specified surface was hit, apply the default impact effect
+	default:
+		SelectedEffect = DefaultImpactEffect;
+		break;
+	}
+
+	// If designer has set the impact effect in blueprints...
+	if (SelectedEffect)
+	{
+		FVector MuzzleLocation = SkelMeshComp->GetSocketLocation(MuzzleSocketName);
+		FVector ShotDirection = ImpactPoint - MuzzleLocation;
+		ShotDirection.Normalize();
+		// Spawn a particle effect at the impact point's location and rotation
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, ImpactPoint, ShotDirection.Rotation());
+	}
+}
+
+// This needs to be made whenever a corresponding header file variable uses replication
+// GetLifetimeReplicatedProps allows us to specify what we want to replicate and how we want to replicate it
+void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// Default most simple replication
+	// Replicate to any relevant client that is connected to us
+	// DOREPLIFETIME_CONDITION allows us to make a variable replicated based on a condition
+	// The following has a condition of COND_SkipOwner and will therefore not replicate to the owning client
+	DOREPLIFETIME_CONDITION(ASWeapon, HitScanTrace, COND_SkipOwner);
+
 }
