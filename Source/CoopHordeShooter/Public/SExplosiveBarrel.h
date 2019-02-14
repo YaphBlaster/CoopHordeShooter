@@ -34,18 +34,13 @@ protected:
 		UParticleSystem* ExplodeFX;
 
 	/*Pawn died previously*/
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_bHasExploded, Category = "Components")
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Exploded, Category = "Components")
 		bool bHasExploded;
 
 	UFUNCTION()
-		void OnRep_bHasExploded();
+		void OnRep_Exploded();
 
 	void Explode();
-
-	// PARAM: Server - Push all requests to the hosting server
-	// PARAM: Reliable - 100% will eventually be called
-	UFUNCTION(Server, Reliable, WithValidation)
-		void ServerExplode();
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 		UStaticMeshComponent* MeshComp;

@@ -30,8 +30,9 @@ ASExplosiveBarrel::ASExplosiveBarrel()
 	HealthComp->OnHealthChanged.AddDynamic(this, &ASExplosiveBarrel::OnHealthChanged);
 
 	SetReplicates(true);
-	SetReplicateMovement(true);
 
+	// Replicates physics
+	SetReplicateMovement(true);
 }
 
 // Called when the game starts or when spawned
@@ -56,7 +57,7 @@ void ASExplosiveBarrel::OnHealthChanged(USHealthComponent* OwningHealthComp, flo
 	}
 }
 
-void ASExplosiveBarrel::OnRep_bHasExploded()
+void ASExplosiveBarrel::OnRep_Exploded()
 {
 	if (GEngine)
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Explosion!"));
@@ -70,13 +71,6 @@ void ASExplosiveBarrel::OnRep_bHasExploded()
 
 void ASExplosiveBarrel::Explode()
 {
-	// When the client calls Explode, their role will be less than the ROLE_AUTHORITY (Server)
-	// The second time this runs, after ServerExplode is called, the Role will be ROLE_AUTHORITY (Server) and will therefore be skipped
-	if (Role < ROLE_Authority)
-	{
-		// make the request to the server to explode for the client
-		ServerExplode();
-	}
 
 	// Boost the barrel upwards
 	FVector BoostIntensity = FVector::UpVector * UpwardBarrelLaunchForce;
@@ -93,15 +87,6 @@ void ASExplosiveBarrel::Explode()
 
 }
 
-void ASExplosiveBarrel::ServerExplode_Implementation()
-{
-	Explode();
-}
-
-bool ASExplosiveBarrel::ServerExplode_Validate()
-{
-	return true;
-}
 
 // This needs to be made whenever a corresponding header file variable uses replication
 // GetLifetimeReplicatedProps allows us to specify what we want to replicate and how we want to replicate it
@@ -111,9 +96,7 @@ void ASExplosiveBarrel::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 	// Default most simple replication
 	// Replicate to any relevant client that is connected to us
-	// DOREPLIFETIME_CONDITION allows us to make a variable replicated based on a condition
-	// The following has a condition of COND_SkipOwner and will therefore not replicate to the owning client
-	DOREPLIFETIME_CONDITION(ASExplosiveBarrel, bHasExploded, COND_SkipOwner);
+	DOREPLIFETIME(ASExplosiveBarrel, bHasExploded);
 
 
 }
