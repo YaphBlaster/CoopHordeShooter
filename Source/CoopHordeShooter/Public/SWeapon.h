@@ -79,7 +79,6 @@ protected:
 
 	// PARAM: Server - Push all requests to the hosting server
 	// PARAM: Reliable - 100% will eventually be called
-	// PARAM - 
 	UFUNCTION(Server, Reliable, WithValidation)
 		void ServerFire();
 

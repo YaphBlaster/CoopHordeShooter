@@ -1,17 +1,15 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "SHealthComponent.h"
+#include "UnrealNetwork.h"
 
 // Sets default values for this component's properties
 USHealthComponent::USHealthComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
-
 	DefaultHealth = 100;
+
+	// Make sure that the component is being replicated
+	SetIsReplicated(true);
 }
 
 
@@ -20,15 +18,19 @@ void USHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-
-	AActor* MyOwner = GetOwner();
-
-	if (MyOwner)
+	// Only hook if we are server
+	// Since we are in a component and NOT an actor
+	// We have to call GetOwnerRole
+	if (GetOwnerRole() == ROLE_Authority)
 	{
-		// Subscribe a function to the owner's OnTakeAnyDamage event
-		// This is done with AddDynamic
-		MyOwner->OnTakeAnyDamage.AddDynamic(this, &USHealthComponent::HandleTakeAnyDamage);
+		AActor* MyOwner = GetOwner();
+
+		if (MyOwner)
+		{
+			// Subscribe a function to the owner's OnTakeAnyDamage event
+			// This is done with AddDynamic
+			MyOwner->OnTakeAnyDamage.AddDynamic(this, &USHealthComponent::HandleTakeAnyDamage);
+		}
 	}
 
 	Health = DefaultHealth;
@@ -52,4 +54,15 @@ void USHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, 
 }
 
 
+// This needs to be made whenever a corresponding header file variable uses replication
+// GetLifetimeReplicatedProps allows us to specify what we want to replicate and how we want to replicate it
+void USHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// Default most simple replication
+	// Replicate to any relevant client that is connected to us
+	DOREPLIFETIME(USHealthComponent, Health);
+
+}
 
