@@ -57,6 +57,7 @@ void ASExplosiveBarrel::OnHealthChanged(USHealthComponent* OwningHealthComp, flo
 	}
 }
 
+// Replication function that runs from server to clients
 void ASExplosiveBarrel::OnRep_Exploded()
 {
 	if (GEngine)
