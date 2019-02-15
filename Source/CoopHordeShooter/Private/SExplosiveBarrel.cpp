@@ -5,6 +5,7 @@
 #include "Public/Components/SHealthComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "PhysicsEngine/RadialForceComponent.h"
+#include "UnrealNetwork.h"
 
 // Sets default values
 ASExplosiveBarrel::ASExplosiveBarrel()
@@ -27,6 +28,11 @@ ASExplosiveBarrel::ASExplosiveBarrel()
 
 	HealthComp = CreateDefaultSubobject<USHealthComponent>(TEXT("HealthComp"));
 	HealthComp->OnHealthChanged.AddDynamic(this, &ASExplosiveBarrel::OnHealthChanged);
+
+	SetReplicates(true);
+
+	// Replicates physics
+	SetReplicateMovement(true);
 }
 
 // Called when the game starts or when spawned
@@ -51,10 +57,21 @@ void ASExplosiveBarrel::OnHealthChanged(USHealthComponent* OwningHealthComp, flo
 	}
 }
 
+// Replication function that runs from server to clients
+void ASExplosiveBarrel::OnRep_Exploded()
+{
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Explosion!"));
+
+	// Play FX and change self material to black
+	UGameplayStatics::SpawnEmitterAtLocation(this, ExplodeFX, GetActorLocation());
+
+	// Override material on mesh with blackened version
+	MeshComp->SetMaterial(0, BurntMaterial);
+}
+
 void ASExplosiveBarrel::Explode()
 {
-
-
 
 	// Boost the barrel upwards
 	FVector BoostIntensity = FVector::UpVector * UpwardBarrelLaunchForce;
@@ -68,6 +85,20 @@ void ASExplosiveBarrel::Explode()
 
 	// Blast away nearby physics actors
 	RadialForceComp->FireImpulse();
+
+}
+
+
+// This needs to be made whenever a corresponding header file variable uses replication
+// GetLifetimeReplicatedProps allows us to specify what we want to replicate and how we want to replicate it
+void ASExplosiveBarrel::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// Default most simple replication
+	// Replicate to any relevant client that is connected to us
+	DOREPLIFETIME(ASExplosiveBarrel, bHasExploded);
+
 
 }
 

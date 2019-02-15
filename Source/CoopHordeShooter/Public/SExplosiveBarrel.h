@@ -30,19 +30,22 @@ protected:
 	UFUNCTION()
 		void OnHealthChanged(USHealthComponent* OwningHealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
-	UPROPERTY(EditDefaultsOnly, Category = "FX")
+	UPROPERTY(EditDefaultsOnly, Replicated, Category = "FX")
 		UParticleSystem* ExplodeFX;
 
 	/*Pawn died previously*/
-	UPROPERTY(BlueprintReadOnly, Category = "Components")
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_Exploded, Category = "Components")
 		bool bHasExploded;
+
+	UFUNCTION()
+		void OnRep_Exploded();
 
 	void Explode();
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 		UStaticMeshComponent* MeshComp;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Material")
+	UPROPERTY(VisibleAnywhere, Category = "Material")
 		UMaterial* BurntMaterial;
 
 	UPROPERTY(EditAnywhere, Category = "Explosion")

@@ -11,6 +11,22 @@ class UDamageType;
 class UParticleSystem;
 class UCameraShake;
 
+// Contains information of a single hitscan weapon linetrace
+USTRUCT()
+struct FHitScanTrace
+{
+	GENERATED_BODY()
+
+public:
+	// Send vector information over the network
+	// Less precise but less data to move also
+	UPROPERTY()
+		TEnumAsByte<EPhysicalSurface> SurfaceType;
+
+	UPROPERTY()
+		FVector_NetQuantize TraceTo;
+};
+
 UCLASS()
 class COOPHORDESHOOTER_API ASWeapon : public AActor
 {
@@ -29,6 +45,8 @@ protected:
 		USkeletalMeshComponent* SkelMeshComp;
 
 	void PlayFireEffects(FVector TraceEnd);
+
+	void PlayImpactEffect(EPhysicalSurface SurfaceType, FVector ImpactPoint);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 		UParticleSystem* MuzzleEffect;
@@ -59,6 +77,11 @@ protected:
 	// Virtual keyword needs to be added in order to override the function in derived classes
 	virtual void Fire();
 
+	// PARAM: Server - Push all requests to the hosting server
+	// PARAM: Reliable - 100% will eventually be called
+	UFUNCTION(Server, Reliable, WithValidation)
+		void ServerFire();
+
 	FTimerHandle TimerHandle_TimeBetweenShots;
 
 	float LastFireTime;
@@ -69,6 +92,12 @@ protected:
 
 	// Derived from RateOfFire
 	float TimeBetweenShots;
+
+	UPROPERTY(ReplicatedUsing = OnRep_HitScanTrace)
+		FHitScanTrace HitScanTrace;
+
+	UFUNCTION()
+		void OnRep_HitScanTrace();
 
 public:
 
