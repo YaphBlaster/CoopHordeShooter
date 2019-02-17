@@ -25,6 +25,18 @@ protected:
 	// We are going to return the next vector point for the tracker ball's path
 	FVector GetNextPathPoint();
 
+	// Next point in navigation path
+	FVector NextPathPoint;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+		float MovementForce;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+		bool bUseVelocityChange;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+		float RequiredDistancetoTarget;
+
 
 public:
 	// Called every frame

@@ -6,6 +6,7 @@
 #include "Public/SCharacter.h"
 #include "NavigationPath.h"
 #include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 ASTrackerBot::ASTrackerBot()
@@ -16,8 +17,12 @@ ASTrackerBot::ASTrackerBot()
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp"));
 	// This object will not get in the way of a navigation volume
 	MeshComp->SetCanEverAffectNavigation(false);
-
+	MeshComp->SetSimulatePhysics(true);
 	RootComponent = MeshComp;
+
+	bUseVelocityChange = false;
+	MovementForce = 1000;
+	RequiredDistancetoTarget = 100;
 
 }
 
@@ -25,6 +30,8 @@ ASTrackerBot::ASTrackerBot()
 void ASTrackerBot::BeginPlay()
 {
 	Super::BeginPlay();
+	// Find initial move to
+	NextPathPoint = GetNextPathPoint();
 
 }
 
@@ -38,7 +45,7 @@ FVector ASTrackerBot::GetNextPathPoint()
 	UNavigationPath* NavPath = UNavigationSystemV1::FindPathToActorSynchronously(this, GetActorLocation(), PlayerPawn);
 
 	// If Navpath's Pathpoints are less than 1 that means we are at the current point
-	if (NavPath->PathPoints.Num() > 1)
+	if (NavPath && NavPath->PathPoints.Num() > 1)
 	{
 		// Return the next point in the path (at index 1)
 		return NavPath->PathPoints[1];
@@ -52,6 +59,39 @@ FVector ASTrackerBot::GetNextPathPoint()
 void ASTrackerBot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Returns a float that is the distance between the tracker ball's current location and the next point
+	// .Size() converts vector to float
+	float DistanceToTarget = (GetActorLocation() - NextPathPoint).Size();
+
+	// If the distance to the target is less than the required distance, ...
+	if (DistanceToTarget <= RequiredDistancetoTarget)
+	{
+
+		// Get the next path point
+		NextPathPoint = GetNextPathPoint();
+
+		DrawDebugString(GetWorld(), GetActorLocation(), "Target Reached");
+
+	}
+	else
+	{
+		// Keep moving towards next target
+
+		// In order to get a direction, we subtract the desired location by the tracker ball's current location
+		FVector ForceDirection = NextPathPoint - GetActorLocation();
+		ForceDirection.Normalize();
+
+		ForceDirection *= MovementForce;
+
+		MeshComp->AddForce(ForceDirection, NAME_None, bUseVelocityChange);
+
+		DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + ForceDirection, 32, FColor::Yellow, false, 0.0f, 0, 1.0f);
+
+
+	}
+
+	DrawDebugSphere(GetWorld(), NextPathPoint, 20, 12, FColor::Yellow, false, 0.0f, 1.0f);
 
 }
 
