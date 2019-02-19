@@ -8,6 +8,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Public/Components/SHealthComponent.h"
+#include "Components/SphereComponent.h"
+#include "Sound/SoundCue.h"
 
 // Sets default values
 ASTrackerBot::ASTrackerBot()
@@ -24,9 +26,25 @@ ASTrackerBot::ASTrackerBot()
 	HealthComp = CreateDefaultSubobject<USHealthComponent>(TEXT("HealthComp"));
 	HealthComp->OnHealthChanged.AddDynamic(this, &ASTrackerBot::HandleTakeDamage);
 
+	SphereComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
+	SphereComp->SetSphereRadius(200);
+	// Set to query only as we don't want physics on the component
+	SphereComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	// By setting the response to all channels to Ignore, we put less stress on the physics engine
+	SphereComp->SetCollisionResponseToAllChannels(ECR_Ignore);
+	// We only set what we need
+	// Set the the collider to respond to pawns when we overlap
+	SphereComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	SphereComp->SetupAttachment(RootComponent);
+
 	bUseVelocityChange = false;
 	MovementForce = 1000;
 	RequiredDistancetoTarget = 100;
+
+	ExplosionDamage = 40.0f;
+	ExplosionRadius = 200.0f;
+
+	SelfDamageInterval = 0.25f;
 
 }
 
@@ -37,15 +55,12 @@ void ASTrackerBot::BeginPlay()
 	// Find initial move to
 	NextPathPoint = GetNextPathPoint();
 
+
 }
 
 void ASTrackerBot::HandleTakeDamage(USHealthComponent* OwningHealthComp, float Health, float HealthDelta,
 	const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
 {
-	// Explode on hitpoins == 0
-
-	// @TODO: Pulse the material on hit
-
 	// If the material instance has not been set
 	if (MatInst == nullptr)
 	{
@@ -59,6 +74,12 @@ void ASTrackerBot::HandleTakeDamage(USHealthComponent* OwningHealthComp, float H
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("Health %s of %s"), *FString::SanitizeFloat(Health), *GetName());
+
+	// Explode on hitpoins == 0
+	if (Health <= 0.0f)
+	{
+		SelfDestruct();
+	}
 }
 
 FVector ASTrackerBot::GetNextPathPoint()
@@ -79,6 +100,47 @@ FVector ASTrackerBot::GetNextPathPoint()
 
 	// Failed to find path
 	return GetActorLocation();
+}
+
+void ASTrackerBot::SelfDestruct()
+{
+	// If the trackerbot has already exploded
+	if (bExploded)
+	{
+		// Return out
+		return;
+	}
+
+	// Set validation boolean to true
+	bExploded = true;
+
+	// Play Particle System at the trackerbot's position
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
+
+	// TArray is just UE syntax for an array
+	// It will be of type Actor*
+	// This will store the actors that will not take damage
+	TArray<AActor*> IgnoredActor;
+
+	// We add ourselves to the ignore list
+	IgnoredActor.Add(this);
+
+	// Apply Damage
+	UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActor, this, GetInstigatorController(), true);
+
+	DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.0f, 0, 1.0f);
+
+	// Check for null is not needed as the PlaySoundAtLocation already does the check
+	// Alt+G into PlaySoundAtLocation to see this
+	UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
+
+	// Delete Actor immediately
+	Destroy();
+}
+
+void ASTrackerBot::DamageSelf()
+{
+	UGameplayStatics::ApplyDamage(this, 20, GetInstigatorController(), this, nullptr);
 }
 
 // Called every frame
@@ -121,4 +183,27 @@ void ASTrackerBot::Tick(float DeltaTime)
 
 }
 
+// Override of base Actor Method
+void ASTrackerBot::NotifyActorBeginOverlap(AActor* OtherActor)
+{
+	if (!bStartedSelfDestruction)
+	{
+		ASCharacter* PlayerPawn = Cast<ASCharacter>(OtherActor);
+
+		if (PlayerPawn)
+		{
+			// We overlapped with a player!
+
+			// Start self destruction sequence
+			GetWorldTimerManager().SetTimer(TimerHandle_SelfDamage, this, &ASTrackerBot::DamageSelf, SelfDamageInterval, true, 0.0f);
+
+			bStartedSelfDestruction = true;
+
+			// We use SpawnSoundAttached instead of PlaySoundAtLocation because
+			// The TrackerBot will be moving and we want the sound to move with it
+			UGameplayStatics::SpawnSoundAttached(SelfDestructSound, RootComponent);
+		}
+	}
+
+}
 

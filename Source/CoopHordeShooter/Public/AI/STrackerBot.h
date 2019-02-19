@@ -7,6 +7,8 @@
 #include "STrackerBot.generated.h"
 
 class USHealthComponent;
+class USphereComponent;
+class USoundCue;
 
 UCLASS()
 class COOPHORDESHOOTER_API ASTrackerBot : public APawn
@@ -26,6 +28,9 @@ protected:
 
 	UPROPERTY(VisibleDefaultsOnly, Category = "Components")
 		USHealthComponent* HealthComp;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = "Components")
+		USphereComponent* SphereComp;
 
 	UFUNCTION()
 		void HandleTakeDamage(USHealthComponent* OwningHealthComp, float Health, float HealthDelta,
@@ -49,9 +54,46 @@ protected:
 	// Dynamic material to pulse on damage
 	UMaterialInstanceDynamic* MatInst;
 
+	void SelfDestruct();
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+		UParticleSystem* ExplosionEffect;
+
+	bool bExploded;
+
+	bool bStartedSelfDestruction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+		float ExplosionRadius;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+		float ExplosionDamage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+		float SelfDamageInterval;
+
+	// Timer for self destruct
+	// Used in GetWorldTimerManager()
+	FTimerHandle TimerHandle_SelfDamage;
+
+	void DamageSelf();
+
+
+	// NOTE: Audio files must be converted to Unreal's Cue format
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+		USoundCue* SelfDestructSound;
+
+
+	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
+		USoundCue* ExplodeSound;
+
 
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
+
 
 };
