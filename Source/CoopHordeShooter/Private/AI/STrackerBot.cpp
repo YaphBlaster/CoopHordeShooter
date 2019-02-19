@@ -52,8 +52,12 @@ ASTrackerBot::ASTrackerBot()
 void ASTrackerBot::BeginPlay()
 {
 	Super::BeginPlay();
-	// Find initial move to
-	NextPathPoint = GetNextPathPoint();
+
+	if (Role == ROLE_Authority)
+	{
+		// Find initial move to
+		NextPathPoint = GetNextPathPoint();
+	}
 
 
 }
@@ -117,25 +121,37 @@ void ASTrackerBot::SelfDestruct()
 	// Play Particle System at the trackerbot's position
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
 
-	// TArray is just UE syntax for an array
-	// It will be of type Actor*
-	// This will store the actors that will not take damage
-	TArray<AActor*> IgnoredActor;
-
-	// We add ourselves to the ignore list
-	IgnoredActor.Add(this);
-
-	// Apply Damage
-	UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActor, this, GetInstigatorController(), true);
-
-	DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.0f, 0, 1.0f);
-
 	// Check for null is not needed as the PlaySoundAtLocation already does the check
 	// Alt+G into PlaySoundAtLocation to see this
 	UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
 
-	// Delete Actor immediately
-	Destroy();
+	// Hide the Mesh Component
+	MeshComp->SetVisibility(false, true);
+
+	// Disable all collision
+	MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (Role == ROLE_Authority)
+	{
+		// TArray is just UE syntax for an array
+		// It will be of type Actor*
+		// This will store the actors that will not take damage
+		TArray<AActor*> IgnoredActor;
+
+		// We add ourselves to the ignore list
+		IgnoredActor.Add(this);
+
+		// Apply Damage
+		UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActor, this, GetInstigatorController(), true);
+
+		DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.0f, 0, 1.0f);
+
+		// Destroy actor in 2 seconds
+		SetLifeSpan(2.0f);
+
+	}
+
+
 }
 
 void ASTrackerBot::DamageSelf()
@@ -148,45 +164,49 @@ void ASTrackerBot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Returns a float that is the distance between the tracker ball's current location and the next point
-	// .Size() converts vector to float
-	float DistanceToTarget = (GetActorLocation() - NextPathPoint).Size();
-
-	// If the distance to the target is less than the required distance, ...
-	if (DistanceToTarget <= RequiredDistancetoTarget)
+	if (Role == ROLE_Authority && !bExploded)
 	{
+		// Returns a float that is the distance between the tracker ball's current location and the next point
+		// .Size() converts vector to float
+		float DistanceToTarget = (GetActorLocation() - NextPathPoint).Size();
 
-		// Get the next path point
-		NextPathPoint = GetNextPathPoint();
+		// If the distance to the target is less than the required distance, ...
+		if (DistanceToTarget <= RequiredDistancetoTarget)
+		{
 
-		DrawDebugString(GetWorld(), GetActorLocation(), "Target Reached");
+			// Get the next path point
+			NextPathPoint = GetNextPathPoint();
 
+			DrawDebugString(GetWorld(), GetActorLocation(), "Target Reached");
+
+		}
+		else
+		{
+			// Keep moving towards next target
+
+			// In order to get a direction, we subtract the desired location by the tracker ball's current location
+			FVector ForceDirection = NextPathPoint - GetActorLocation();
+			ForceDirection.Normalize();
+
+			ForceDirection *= MovementForce;
+
+			MeshComp->AddForce(ForceDirection, NAME_None, bUseVelocityChange);
+
+			DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + ForceDirection, 32, FColor::Yellow, false, 0.0f, 0, 1.0f);
+
+
+		}
+
+		DrawDebugSphere(GetWorld(), NextPathPoint, 20, 12, FColor::Yellow, false, 0.0f, 1.0f);
 	}
-	else
-	{
-		// Keep moving towards next target
 
-		// In order to get a direction, we subtract the desired location by the tracker ball's current location
-		FVector ForceDirection = NextPathPoint - GetActorLocation();
-		ForceDirection.Normalize();
-
-		ForceDirection *= MovementForce;
-
-		MeshComp->AddForce(ForceDirection, NAME_None, bUseVelocityChange);
-
-		DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + ForceDirection, 32, FColor::Yellow, false, 0.0f, 0, 1.0f);
-
-
-	}
-
-	DrawDebugSphere(GetWorld(), NextPathPoint, 20, 12, FColor::Yellow, false, 0.0f, 1.0f);
 
 }
 
 // Override of base Actor Method
 void ASTrackerBot::NotifyActorBeginOverlap(AActor* OtherActor)
 {
-	if (!bStartedSelfDestruction)
+	if (!bStartedSelfDestruction && !bExploded)
 	{
 		ASCharacter* PlayerPawn = Cast<ASCharacter>(OtherActor);
 
@@ -194,8 +214,11 @@ void ASTrackerBot::NotifyActorBeginOverlap(AActor* OtherActor)
 		{
 			// We overlapped with a player!
 
-			// Start self destruction sequence
-			GetWorldTimerManager().SetTimer(TimerHandle_SelfDamage, this, &ASTrackerBot::DamageSelf, SelfDamageInterval, true, 0.0f);
+			if (Role == ROLE_Authority)
+			{
+				// Start self destruction sequence
+				GetWorldTimerManager().SetTimer(TimerHandle_SelfDamage, this, &ASTrackerBot::DamageSelf, SelfDamageInterval, true, 0.0f);
+			}
 
 			bStartedSelfDestruction = true;
 
