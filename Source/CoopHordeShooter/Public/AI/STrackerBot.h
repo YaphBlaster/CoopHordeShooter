@@ -32,6 +32,7 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, Category = "Components")
 		USphereComponent* SphereComp;
 
+
 	UFUNCTION()
 		void HandleTakeDamage(USHealthComponent* OwningHealthComp, float Health, float HealthDelta,
 			const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
@@ -78,15 +79,19 @@ protected:
 
 	void DamageSelf();
 
-
 	// NOTE: Audio files must be converted to Unreal's Cue format
-
 	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
 		USoundCue* SelfDestructSound;
 
 
 	UPROPERTY(EditDefaultsOnly, Category = "TrackerBot")
 		USoundCue* ExplodeSound;
+
+	// Find nearby enemies and grow in 'power level' based on the amount
+	void CheckNearbyBots();
+
+	// the power boost of the bot, affects damage caused to enemies and color of the bot (range: 1 to 4)
+	int32 PowerLevel;
 
 
 public:

@@ -59,6 +59,8 @@ void ASTrackerBot::BeginPlay()
 		NextPathPoint = GetNextPathPoint();
 	}
 
+	MatInst = MeshComp->CreateAndSetMaterialInstanceDynamicFromMaterial(0, MeshComp->GetMaterial(0));
+
 
 }
 
@@ -141,8 +143,11 @@ void ASTrackerBot::SelfDestruct()
 		// We add ourselves to the ignore list
 		IgnoredActor.Add(this);
 
+		// Increase damage based on the power level (challenge code)
+		float ActualDamage = ExplosionDamage + (ExplosionDamage * PowerLevel);
+
 		// Apply Damage
-		UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActor, this, GetInstigatorController(), true);
+		UGameplayStatics::ApplyRadialDamage(this, ActualDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoredActor, this, GetInstigatorController(), true);
 
 		DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.0f, 0, 1.0f);
 
@@ -159,10 +164,75 @@ void ASTrackerBot::DamageSelf()
 	UGameplayStatics::ApplyDamage(this, 20, GetInstigatorController(), this, nullptr);
 }
 
+void ASTrackerBot::CheckNearbyBots()
+{
+
+	// distance to check for nearby bots
+	const float Radius = 600.0f;
+
+	// Create temporary collision shape for overlaps
+	FCollisionShape SphereCollisionShape;
+	SphereCollisionShape.SetSphere(Radius);
+
+	// Only find Pawns (eg. players and AI bots)
+	FCollisionObjectQueryParams QueryParams;
+	// Our tracker bot's mesh component is set to Physics Body in blueprint (default profile of physics simulated actors)
+	QueryParams.AddObjectTypesToQuery(ECC_PhysicsBody);
+	QueryParams.AddObjectTypesToQuery(ECC_Pawn);
+	QueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+
+	// This following is good for overlapping actors within a single collision area
+	// However, this does not allow us to use a bigger or smaller collision area
+	// Check if any bots are nearby
+	// TArray<AActor*> NearbyTrackerBots;
+	// GetOverlappingActors(NearbyTrackerBots, ASTrackerBot::StaticClass());
+
+	TArray<FOverlapResult> Overlaps;
+
+	// Returns an array of overlap results that is stored in the first parameter of the function
+	GetWorld()->OverlapMultiByObjectType(Overlaps, GetActorLocation(), FQuat::Identity, QueryParams, SphereCollisionShape);
+
+
+	int32 NumberOfBots = 0;
+
+
+	// Loop over the results using a "range based for loop"
+	for (FOverlapResult Result : Overlaps)
+	{
+
+		// Check if we overlapped with another tracker but (ignoring players and other bot types)
+		ASTrackerBot* Bot = Cast<ASTrackerBot>(Result.GetActor());
+		// Ignore this Trackerbot Instance
+		if (Bot && Bot != this)
+		{
+			NumberOfBots++;
+		}
+	}
+
+
+	const int32 MaxPowerLevel = 4;
+
+	// Clamp between min=0 and max=4
+	PowerLevel = FMath::Clamp(NumberOfBots, 0, MaxPowerLevel);
+
+	// Convert to a float between 0 and 1 just like an 'Alpha' value of a texture. Now the material can be set up without having to know the max power level
+	// which can be tweaked many times by gameplay decisions (would mean we need to keep 2 places up to date)
+	float Alpha = PowerLevel / float(MaxPowerLevel);
+	// NOTE: (float)MaxPowerLevel converts the int32 to a float,
+	// otherwise the following happens when dealing when dividing integers: 1/4 = 0 ('PowerLevel' int / 'MaxPowerLevel' int = 0 int)
+	// this is a common programming problem and can be fixed by 'casting' the int (MaxPowerLevel) to a float before dividing
+
+	//Set material to pulse per number of nearby bots
+	MatInst->SetScalarParameterValue("PowerLevelAlpha", Alpha);
+}
+
+
 // Called every frame
 void ASTrackerBot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	CheckNearbyBots();
 
 	if (Role == ROLE_Authority && !bExploded)
 	{
@@ -199,6 +269,7 @@ void ASTrackerBot::Tick(float DeltaTime)
 
 		DrawDebugSphere(GetWorld(), NextPathPoint, 20, 12, FColor::Yellow, false, 0.0f, 1.0f);
 	}
+
 
 
 }
