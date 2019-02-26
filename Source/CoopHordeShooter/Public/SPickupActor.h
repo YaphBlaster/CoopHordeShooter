@@ -26,6 +26,8 @@ protected:
 		USphereComponent* SphereComp;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
+		// Decals create a flat image that can be applied to a plane
+		// It always 2 dimensional
 		UDecalComponent* DecalComp;
 
 public:
