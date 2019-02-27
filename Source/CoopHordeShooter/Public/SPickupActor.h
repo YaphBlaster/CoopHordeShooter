@@ -8,6 +8,7 @@
 
 class USphereComponent;
 class UDecalComponent;
+class ASPowerupActor;
 
 UCLASS()
 class COOPHORDESHOOTER_API ASPickupActor : public AActor
@@ -29,6 +30,18 @@ protected:
 		// Decals create a flat image that can be applied to a plane
 		// It always 2 dimensional
 		UDecalComponent* DecalComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = "PickupActor")
+		TSubclassOf<ASPowerupActor> PowerUpClass;
+
+	ASPowerupActor* PowerUpInstance;
+
+	UPROPERTY(EditDefaultsOnly, Category = "PickupActor")
+		float CooldownDuration;
+
+	FTimerHandle TimerHandle_RespawnTimer;
+
+	void Respawn();
 
 public:
 	// Override of base function NotifyActorBeginOverlap
