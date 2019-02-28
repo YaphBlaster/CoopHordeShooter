@@ -58,7 +58,7 @@ void ASPickupActor::NotifyActorBeginOverlap(AActor* OtherActor)
 
 	if (Role == ROLE_Authority && PowerUpInstance)
 	{
-		PowerUpInstance->ActivatePowerup();
+		PowerUpInstance->ActivatePowerup(OtherActor);
 
 		// We no longer own this power up instance
 		PowerUpInstance = nullptr;
