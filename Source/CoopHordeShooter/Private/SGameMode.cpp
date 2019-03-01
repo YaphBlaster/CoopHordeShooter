@@ -32,8 +32,9 @@ void ASGameMode::StartWave()
 	// As the wave level increases so does the number of bots
 	NumberOfBotsToSpawn = 2 * WaveCount;
 
-
 	GetWorldTimerManager().SetTimer(TimerHandle_BotSpawner, this, &ASGameMode::SpawnBotTimerElapsed, 1.0f, true, 0.0f);
+
+	SetWaveState(EWaveState::WaveInProgress);
 }
 
 void ASGameMode::EndWave()
@@ -42,18 +43,20 @@ void ASGameMode::EndWave()
 	GetWorldTimerManager().ClearTimer(TimerHandle_BotSpawner);
 
 	// With the timer cleared, we can begin preparation for the next wave
-	PrepareForNextWave();
+	//PrepareForNextWave();
+
+	SetWaveState(EWaveState::WaitingToComplete);
 
 }
 
 void ASGameMode::PrepareForNextWave()
 {
-	// Handler initialization
-	FTimerHandle TimerHandle_NextWaveStart;
 
 	// Set a timer to start the next wave
 	// Waiting for TimeBetweenWaves number of seconds
 	GetWorldTimerManager().SetTimer(TimerHandle_NextWaveStart, this, &ASGameMode::StartWave, TimeBetweenWaves, false);
+
+	SetWaveState(EWaveState::WaitingToStart);
 }
 
 
@@ -99,6 +102,8 @@ void ASGameMode::CheckWaveState()
 	// no bots are alive,
 	if (!bIsAnyBotAlive)
 	{
+		SetWaveState(EWaveState::WaveComplete);
+
 		// Get the next wave ready
 		PrepareForNextWave();
 	}
@@ -144,6 +149,8 @@ void ASGameMode::GameOver()
 
 	// @TODO: Finish up the match, present 'game over' to players.
 
+	SetWaveState(EWaveState::GameOver);
+
 	UE_LOG(LogTemp, Log, TEXT("GAME OVER! Players Died"));
 }
 
@@ -156,7 +163,7 @@ void ASGameMode::SetWaveState(EWaveState NewState)
 	if (ensureAlways(GS))
 	{
 		// Set the current GameState's WaveState to the passed in NewState
-		GS->WaveState = NewState;
+		GS->SetWaveState(NewState);
 	}
 }
 

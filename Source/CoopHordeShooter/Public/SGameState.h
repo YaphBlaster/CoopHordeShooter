@@ -42,11 +42,13 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "GameState")
 		void WaveStateChanged(EWaveState NewState, EWaveState OldState);
 
-public:
 	// We set the property type to BlueprintReadOnly as we don't want blueprints to mess with the state, however we do want blueprint to be able to read from the WaveState
 	// Replicated using lets us use the previous value
 	// IE Equipping a new weapon and rembering the old weapon to switch back to quickly
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_WaveState, Category = "Game State")
 		EWaveState WaveState;
+
+public:
+	void SetWaveState(EWaveState NewState);
 
 };
