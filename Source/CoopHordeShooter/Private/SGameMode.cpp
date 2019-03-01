@@ -3,10 +3,16 @@
 #include "SGameMode.h"
 #include "TimerManager.h"
 #include "SHealthComponent.h"
+#include "SGameState.h"
 
+// NOTE: GAMEMODE ONLY EXISTS ON THE SERVER AND DOES NOT GET REPLICATED TO CLIENTS
+// TO UTILIZE REPLICATION WE USE GAMESTATE	
 ASGameMode::ASGameMode()
 {
 	TimeBetweenWaves = 2.0f;
+
+	// Setting the default GameState class to be the SGameState class
+	GameStateClass = ASGameState::StaticClass();
 
 	// By default the tick is set to false for a GameMode
 	// For our game we need to set this to true
@@ -139,6 +145,19 @@ void ASGameMode::GameOver()
 	// @TODO: Finish up the match, present 'game over' to players.
 
 	UE_LOG(LogTemp, Log, TEXT("GAME OVER! Players Died"));
+}
+
+void ASGameMode::SetWaveState(EWaveState NewState)
+{
+	// Store the GameState from the GameMode
+	ASGameState* GS = GetGameState<ASGameState>();
+
+	// assert the GameState exists
+	if (ensureAlways(GS))
+	{
+		// Set the current GameState's WaveState to the passed in NewState
+		GS->WaveState = NewState;
+	}
 }
 
 void ASGameMode::StartPlay()

@@ -6,6 +6,10 @@
 #include "GameFramework/GameModeBase.h"
 #include "SGameMode.generated.h"
 
+// Forward declaration for enums
+// We need this because the compiler doesn't understand what EWaveState is
+enum class EWaveState : uint8;
+
 /**
  *
  */
@@ -49,6 +53,9 @@ protected:
 	void CheckAnyPlayerAlive();
 
 	void GameOver();
+
+	void SetWaveState(EWaveState NewState);
+
 
 public:
 
