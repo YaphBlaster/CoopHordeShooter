@@ -99,6 +99,48 @@ void ASGameMode::CheckWaveState()
 
 }
 
+void ASGameMode::CheckAnyPlayerAlive()
+{
+	// Iterate over all the player controllers available
+	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		// Store the player controller from the iterator
+		APlayerController* PC = Iterator->Get();
+
+		// Check if player controller not null and player controller has a pawn
+		if (PC && PC->GetPawn())
+		{
+			// Store the pawn from the player controller
+			APawn* MyPawn = PC->GetPawn();
+
+			// Store the HealthComponent from the pawn actor
+			USHealthComponent* HealthComp = Cast<USHealthComponent>(MyPawn->GetComponentByClass(USHealthComponent::StaticClass()));
+
+			// Ensure is an assert
+			// This will create a break in our code if HealthComp is false or null
+			if (ensure(HealthComp) && HealthComp->GetHealth() > 0.0f)
+			{
+				// A player is still alive.
+				return;
+			}
+		}
+	}
+
+	// No player alive
+	GameOver();
+
+
+}
+
+void ASGameMode::GameOver()
+{
+	EndWave();
+
+	// @TODO: Finish up the match, present 'game over' to players.
+
+	UE_LOG(LogTemp, Log, TEXT("GAME OVER! Players Died"));
+}
+
 void ASGameMode::StartPlay()
 {
 	// This is a GameMode specific function that we are overriding
@@ -118,6 +160,8 @@ void ASGameMode::Tick(float DeltaSeconds)
 	// Every once per second, we will check the wave state
 	CheckWaveState();
 
+	// Every once per second, we want to check if a player is still alive
+	CheckAnyPlayerAlive();
 
 }
 
