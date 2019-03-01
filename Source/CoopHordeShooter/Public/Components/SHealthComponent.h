@@ -38,6 +38,11 @@ protected:
 		void HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 public:
+
+	// Accessor
+	// const makes us promise that me will not be changing any variables
+	float GetHealth() const;
+
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 		FOnHealthChangedSignature OnHealthChanged;
 
