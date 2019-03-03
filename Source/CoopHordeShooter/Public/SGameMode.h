@@ -10,6 +10,13 @@
 // We need this because the compiler doesn't understand what EWaveState is
 enum class EWaveState : uint8;
 
+// Sending information to clients/server
+// Think about how many params you will need
+// For this example, we need 2 actors, a victim and a killer
+// First parameter is the name of the function
+// Name should be prefixed with "F""
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnActorKilled, AActor*, VictimActor, AActor*, KillerActor, AController*, KillerController); // VICTIM actor, KILLER actor
+
 /**
  *
  */
@@ -65,5 +72,7 @@ public:
 
 	virtual void Tick(float DeltaSeconds) override;
 
-
+	// BlueprintAssignable is used when we want to hook into the event
+	UPROPERTY(BlueprintAssignable, Category = "GameMode")
+		FOnActorKilled OnActorKilled;
 };

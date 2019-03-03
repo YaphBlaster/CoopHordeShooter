@@ -4,6 +4,7 @@
 #include "TimerManager.h"
 #include "SHealthComponent.h"
 #include "SGameState.h"
+#include "SPlayerState.h"
 
 // NOTE: GAMEMODE ONLY EXISTS ON THE SERVER AND DOES NOT GET REPLICATED TO CLIENTS
 // TO UTILIZE REPLICATION WE USE GAMESTATE	
@@ -11,7 +12,10 @@ ASGameMode::ASGameMode()
 {
 	TimeBetweenWaves = 2.0f;
 
-	// Setting the default GameState class to be the SGameState class
+	// Setting the default PlayerState to the SPlayerState's Class
+	PlayerStateClass = ASPlayerState::StaticClass();
+
+	// Setting the default GameState class to be the SGameState's class
 	GameStateClass = ASGameState::StaticClass();
 
 	// By default the tick is set to false for a GameMode
