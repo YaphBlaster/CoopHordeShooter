@@ -98,7 +98,7 @@ FVector ASTrackerBot::GetNextPathPoint()
 	UNavigationPath* NavPath = UNavigationSystemV1::FindPathToActorSynchronously(this, GetActorLocation(), PlayerPawn);
 
 	// If Navpath's Pathpoints are less than 1 that means we are at the current point
-	if (NavPath && NavPath->PathPoints.Num() > 1)
+	if (NavPath && NavPath && NavPath->PathPoints.Num() > 1)
 	{
 		// Return the next point in the path (at index 1)
 		return NavPath->PathPoints[1];
