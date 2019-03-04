@@ -61,6 +61,8 @@ void ASGameMode::PrepareForNextWave()
 	GetWorldTimerManager().SetTimer(TimerHandle_NextWaveStart, this, &ASGameMode::StartWave, TimeBetweenWaves, false);
 
 	SetWaveState(EWaveState::WaitingToStart);
+
+	RespawnDeadPlayers();
 }
 
 
@@ -168,6 +170,27 @@ void ASGameMode::SetWaveState(EWaveState NewState)
 	{
 		// Set the current GameState's WaveState to the passed in NewState
 		GS->SetWaveState(NewState);
+	}
+}
+
+// Since this function is in the GameMode, this will only run on the server
+// The server has a reference to all of the player controllers
+void ASGameMode::RespawnDeadPlayers()
+{
+	// Iterate over all the player controllers available
+	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		// Store the player controller from the iterator
+		APlayerController* PC = Iterator->Get();
+
+		// Check if player controller is not null and player controller's pawn is null
+		if (PC && PC->GetPawn() == nullptr)
+		{
+			// Inherited function
+			// Respawn the player
+			RestartPlayer(PC);
+
+		}
 	}
 }
 
