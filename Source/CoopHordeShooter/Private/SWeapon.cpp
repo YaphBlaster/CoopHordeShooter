@@ -35,7 +35,7 @@ ASWeapon::ASWeapon()
 	TracerTargetName = "Target";
 
 	BaseDamage = 20.0f;
-
+	BulletSpread = 2.0f;
 	RateOfFire = 600;
 
 	// This allows us to spawn the weapon on the client when the weapon is originally spawned on the server
@@ -84,6 +84,16 @@ void ASWeapon::Fire()
 		MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotation);
 
 		FVector ShotDirection = EyeRotation.Vector();
+
+		/* Bullet Spread */
+
+		// Radian for random cone
+		float HalfRad = FMath::DegreesToRadians(BulletSpread);
+
+		// Vector random and cone
+		// This will make a random shot direction so the bullet isn't pixel perfect
+		// We will overwrite the original shot direction (which was 100% accurate) to the new slightly randomized cone shot direction
+		ShotDirection = FMath::VRandCone(ShotDirection, HalfRad);
 
 		// Where the line trace will end
 		// Wherever we are currently looking, plus the eye rotation multiplied by 10,000 
