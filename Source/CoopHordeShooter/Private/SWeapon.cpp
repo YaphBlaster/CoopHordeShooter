@@ -145,7 +145,7 @@ void ASWeapon::Fire()
 			}
 
 			// Apply point damage
-			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, HitResult, MyOwner->GetInstigatorController(), this, DamageType);
+			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, HitResult, MyOwner->GetInstigatorController(), MyOwner, DamageType);
 
 			PlayImpactEffect(SurfaceType, HitResult.ImpactPoint);
 			// Set the TracerEndpoint to be where the hitresult's impact point was

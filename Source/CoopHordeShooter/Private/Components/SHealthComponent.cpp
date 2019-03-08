@@ -10,6 +10,8 @@ USHealthComponent::USHealthComponent()
 	DefaultHealth = 100;
 	bIsDead = false;
 
+	TeamNum = 255;
+
 	// Make sure that the component is being replicated
 	SetIsReplicated(true);
 }
@@ -51,6 +53,15 @@ void USHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, 
 {
 	// If the damage incurred is less than 0 OR if the character is already dead
 	if (Damage <= 0.0f || bIsDead)
+	{
+		// Exit out of this function
+		return;
+	}
+
+	// If the DamageCauser IS NOT the DamageActor (Self harming TrackerBots)
+	// AND
+	// If the DamageActor and the DamageCauser are both friendly (On the same team)
+	if (DamageCauser != DamagedActor && IsFriendly(DamagedActor, DamageCauser))
 	{
 		// Exit out of this function
 		return;
@@ -106,6 +117,26 @@ void USHealthComponent::Heal(float HealAmount)
 	OnHealthChanged.Broadcast(this, Health, -HealAmount, nullptr, nullptr, nullptr);
 
 
+}
+
+bool USHealthComponent::IsFriendly(AActor* ActorA, AActor* ActorB)
+{
+	if (ActorB == nullptr && ActorB == nullptr)
+	{
+		// Assume friendly
+		return true;
+	}
+	USHealthComponent* HealthCompA = Cast<USHealthComponent>(ActorA->GetComponentByClass(USHealthComponent::StaticClass()));
+	USHealthComponent* HealthCompB = Cast<USHealthComponent>(ActorB->GetComponentByClass(USHealthComponent::StaticClass()));
+
+	if (HealthCompA == nullptr || HealthCompB == nullptr)
+	{
+		// Assume friendly
+		return true;
+	}
+
+	// Return true if the 2 health components are from the same team
+	return HealthCompA->TeamNum == HealthCompB->TeamNum;
 }
 
 // This needs to be made whenever a corresponding header file variable uses replication
