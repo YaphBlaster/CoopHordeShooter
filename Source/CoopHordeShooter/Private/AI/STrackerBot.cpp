@@ -222,8 +222,12 @@ void ASTrackerBot::CheckNearbyBots()
 	// otherwise the following happens when dealing when dividing integers: 1/4 = 0 ('PowerLevel' int / 'MaxPowerLevel' int = 0 int)
 	// this is a common programming problem and can be fixed by 'casting' the int (MaxPowerLevel) to a float before dividing
 
-	//Set material to pulse per number of nearby bots
-	MatInst->SetScalarParameterValue("PowerLevelAlpha", Alpha);
+	if (MatInst)
+	{
+		//Set material to pulse per number of nearby bots
+		MatInst->SetScalarParameterValue("PowerLevelAlpha", Alpha);
+	}
+
 }
 
 
