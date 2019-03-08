@@ -66,6 +66,7 @@ protected:
 	void RespawnDeadPlayers();
 
 
+
 public:
 
 	ASGameMode();
@@ -77,4 +78,5 @@ public:
 	// BlueprintAssignable is used when we want to hook into the event
 	UPROPERTY(BlueprintAssignable, Category = "GameMode")
 		FOnActorKilled OnActorKilled;
+
 };
