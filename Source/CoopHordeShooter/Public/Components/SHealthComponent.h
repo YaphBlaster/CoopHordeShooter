@@ -18,6 +18,12 @@ public:
 	// Sets default values for this component's properties
 	USHealthComponent();
 
+	// Takes up less memory than uint32
+	// Only allows numbers from 0 - 255
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HealthComponent")
+		uint8 TeamNum;
+
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -50,4 +56,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Health Component")
 		void Heal(float HealAmount);
+
+	// Static means that we don't have to deal with an instance of a health component
+	// We'll be able to use this from anywhere
+	// BlueprintPure allows us to not us to forgo white execute pin
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Health Component")
+		static bool IsFriendly(AActor* ActorA, AActor* ActorB);
 };
